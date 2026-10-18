@@ -1,0 +1,39 @@
+
+steps:
+  # 1. Build Spring Boot JAR
+  - name: 'maven:3.9-eclipse-temurin-21'
+    entrypoint: 'mvn'
+    args: ['clean', 'package', '-DskipTests']
+
+  # 2. Build Docker image
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - 'asia-south1-docker.pkg.dev/orielly-505210/gcs-asset-validator-repo/gcs-asset-validator:$BUILD_ID'
+      - '.'
+
+  # 3. Push image to Artifact Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - 'asia-south1-docker.pkg.dev/orielly-505210/gcs-asset-validator-repo/gcs-asset-validator:$BUILD_ID'
+
+  # 4. Create or update Cloud Run Job
+  - name: 'gcr.io/google.com/cloudsdktool/google-cloud-cli:slim'
+    entrypoint: 'gcloud'
+    args:
+      - 'run'
+      - 'jobs'
+      - 'deploy'
+      - 'gcs-asset-validator-job'
+      - '--image=asia-south1-docker.pkg.dev/orielly-505210/gcs-asset-validator-repo/gcs-asset-validator:$BUILD_ID'
+      - '--region=asia-south1'
+      - '--project=orielly-505210'
+      - '--tasks=1'
+      - '--max-retries=1'
+      - '--task-timeout=1800s'
+      - '--service-account=duplicate-job-trigger@orielly-505210.iam.gserviceaccount.com'
+
+images:
+  - 'asia-south1-docker.pkg.dev/orielly-505210/gcs-asset-validator-repo/gcs-asset-validator:$BUILD_ID'
