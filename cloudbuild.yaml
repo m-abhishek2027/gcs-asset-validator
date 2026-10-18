@@ -37,3 +37,5 @@ steps:
 
 images:
   - 'asia-south1-docker.pkg.dev/orielly-505210/gcs-asset-validator-repo/gcs-asset-validator:$BUILD_ID'
+options:
+  logging: CLOUD_LOGGING_ONLY
